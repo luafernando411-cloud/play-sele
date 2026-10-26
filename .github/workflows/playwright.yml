@@ -1,0 +1,51 @@
+name: E2E Playwright - Dotal Nexo
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      APP_BASE_URL: ${{ secrets.APP_BASE_URL }}
+      E2E_USERNAME: ${{ secrets.E2E_USERNAME }}
+      E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
+      E2E_2FA_CODE: ${{ secrets.E2E_2FA_CODE }}
+      CI: "true"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install Python dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Install Playwright Chromium and system dependencies
+        run: python -m playwright install --with-deps chromium
+
+      - name: Run Playwright E2E tests
+        run: |
+          mkdir -p test-results
+          python -m pytest -v tests/playwright --junitxml=test-results/junit.xml
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-e2e-results
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 14

@@ -1,0 +1,4 @@
+selenium>=4.27,<5
+playwright>=1.49,<2
+pandas>=2.2,<3
+pytest>=8,<9
