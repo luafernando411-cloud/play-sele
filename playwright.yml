@@ -1,0 +1,57 @@
+name: Testes E2E - Playwright (Dotal Nexo)
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+  # Permite rodar manualmente a pipeline pela aba "Actions" do GitHub
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1. Baixar o código do repositório
+    - name: Checkout do código
+      uses: actions/checkout@v4
+
+    # 2. Configurar o ambiente Python
+    - name: Configurar Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+
+    # 3. Instalar dependências do projeto (Selenium, Playwright, Pytest, Pandas, etc.)
+    - name: Instalar dependências
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    # 4. Instalar os navegadores do Playwright e suas dependências de sistema do Linux
+    - name: Instalar navegadores do Playwright
+      run: |
+        playwright install --with-deps
+
+    # 5. Executar os testes usando Pytest
+    - name: Executar Testes E2E
+      run: |
+        pytest -v --html=report.html --self-contained-html
+      env:
+        # Se você usar variáveis de ambiente para login/senhas, configure-as nos Secrets do GitHub
+        BASE_URL: ${{ secrets.BASE_URL }}
+        USER_EMAIL: ${{ secrets.USER_EMAIL }}
+        USER_PASSWORD: ${{ secrets.USER_PASSWORD }}
+
+    # 6. Salvar relatório de testes e capturas de tela em caso de falha (Opcional, mas muito útil)
+    - name: Salvar Relatório de Testes
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: relatorio-testes-playwright
+        path: |
+          report.html
+          test-results/
+        retention-days: 30
